@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+bot_data.db
+fonts/*.ttf
+fonts/*.otf
