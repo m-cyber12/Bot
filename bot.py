@@ -30,6 +30,7 @@
     - در غیر این صورت -> حالت polling معمولی (مناسب اجرای لوکال یا Background Worker)
 """
 
+import asyncio
 import hashlib
 import io
 import logging
@@ -84,9 +85,20 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "PUT_YOUR_TOKEN_HERE")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "0") or 0)
 DAILY_FREE_USES = int(os.environ.get("DAILY_FREE_USES", "3"))
 BONUS_PER_INVITE = int(os.environ.get("BONUS_PER_INVITE", "2"))
-FONT_PATH = os.environ.get(
-    "FONT_PATH", os.path.join(os.path.dirname(__file__), "fonts", "Vazirmatn-Bold.ttf")
-)
+def _default_font_path() -> str:
+    """فونت رو هم در fonts/ و هم در font/ دنبال می‌کنه (توی مخزن، پوشه‌ی font/ استفاده شده)."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    candidates = (
+        os.path.join(base, "fonts", "Vazirmatn-Bold.ttf"),
+        os.path.join(base, "font", "Vazirmatn-Bold.ttf"),
+    )
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return candidates[0]
+
+
+FONT_PATH = os.environ.get("FONT_PATH") or _default_font_path()
 DB_PATH = os.environ.get(
     "DB_PATH", os.path.join(os.path.dirname(__file__), "bot_data.db")
 )
@@ -658,11 +670,23 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.inline_query.answer(results, cache_time=0)
 
 
+def _ensure_event_loop():
+    """سازگاری با Python 3.14+؛ از پایتون ۳.۱۴ به بعد حلقه‌ی رویداد به‌صورت خودکار
+    ساخته نمی‌شه و نسخه‌های قدیمی‌تر python-telegram-bot به اون رفتار وابسته بودن.
+    اگه حلقه‌ای وجود نداشته باشه، یکی جدید می‌سازیم و ثبتش می‌کنیم."""
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+
 def main():
     if BOT_TOKEN == "PUT_YOUR_TOKEN_HERE":
         raise SystemExit(
             "لطفاً متغیر محیطی BOT_TOKEN رو با توکن ربات تلگرامت تنظیم کن."
         )
+
+    _ensure_event_loop()  # جلوگیری از RuntimeError روی پایتون ۳.۱۴+
 
     db_connect()  # ساخت جدول در صورت نبود
 
