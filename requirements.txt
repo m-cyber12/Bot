@@ -1,4 +1,4 @@
-python-telegram-bot==22.7
+python-telegram-bot[webhooks]==22.7
 Pillow==10.4.0
 arabic-reshaper==3.0.0
 python-bidi==0.4.2
