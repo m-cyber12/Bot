@@ -1,0 +1,58 @@
+# این Blueprint یه سرویس از نوع Web Service می‌سازه (تا از پلن رایگان Render استفاده کنی).
+# ربات خودش تشخیص می‌ده که روی Web Service داره اجرا می‌شه (چون Render متغیر
+# RENDER_EXTERNAL_URL رو خودکار ست می‌کنه) و به‌جای polling از webhook استفاده می‌کنه.
+#
+# اگه ترجیح می‌دی به‌جاش از Background Worker استفاده کنی (بدون نیاز به webhook، ولی
+# روی پلن‌بندی فعلی Render معمولاً پلن رایگان نداره)، بخش دوم پایین فایل (comment شده) رو
+# جایگزین کن.
+
+services:
+  - type: web
+    name: silly-personality-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: DAILY_FREE_USES
+        value: "3"
+      - key: BONUS_PER_INVITE
+        value: "2"
+      - key: DB_PATH
+        value: /var/data/bot_data.db
+      # نکته: پلن Free دیسک پایدار (persistent disk) رو پشتیبانی نمی‌کنه؛ یعنی دیتابیس
+      # SQLite با هر ری‌دیپلوی/ری‌استارت پاک می‌شه. برای نگه‌داشتن دیتا بین دیپلوی‌ها،
+      # یا پلن رو ارتقا بده و بخش disk پایین رو از حالت کامنت خارج کن، یا به Postgres
+      # مهاجرت کن.
+    # disk:
+    #   name: bot-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+
+# --- جایگزین: Background Worker (حالت polling، بدون نیاز به webhook) ---
+# services:
+#   - type: worker
+#     name: silly-personality-bot
+#     env: python
+#     plan: starter   # background workerها پلن رایگان ندارن
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: python bot.py
+#     envVars:
+#       - key: BOT_TOKEN
+#         sync: false
+#       - key: ADMIN_ID
+#         sync: false
+#       - key: DAILY_FREE_USES
+#         value: "3"
+#       - key: BONUS_PER_INVITE
+#         value: "2"
+#       - key: DB_PATH
+#         value: /var/data/bot_data.db
+#     disk:
+#       name: bot-data
+#       mountPath: /var/data
+#       sizeGB: 1
